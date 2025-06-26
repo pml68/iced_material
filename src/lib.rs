@@ -1,4 +1,5 @@
 use std::borrow::Cow;
+use std::sync::LazyLock;
 
 use iced_widget::core::theme::{Base, Style};
 use iced_widget::core::{color, Color};
@@ -44,6 +45,10 @@ macro_rules! from_argb {
     }};
 }
 
+#[cfg(feature = "system-theme")]
+pub static SYSTEM_IS_DARK: LazyLock<bool> =
+    LazyLock::new(|| dark_light::detect().is_ok_and(|mode| mode == dark_light::Mode::Dark));
+
 #[allow(clippy::large_enum_variant)]
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -57,7 +62,12 @@ pub enum Theme {
 }
 
 impl Theme {
-    pub const ALL: &'static [Self] = &[Self::Dark, Self::Light];
+    pub const ALL: &'static [Self] = &[
+        Self::Dark,
+        Self::Light,
+        #[cfg(feature = "system-theme")]
+        Self::System,
+    ];
 
     pub fn new(name: impl Into<Cow<'static, str>>, colorscheme: ColorScheme) -> Self {
         Self::Custom(Custom {
@@ -90,9 +100,7 @@ impl Theme {
             Self::Dark => true,
             Self::Light => false,
             #[cfg(feature = "system-theme")]
-            Self::System => !dark_light::detect()
-                .ok()
-                .is_some_and(|mode| mode == dark_light::Mode::Light),
+            Self::System => *SYSTEM_IS_DARK,
             Self::Custom(custom) => custom.is_dark,
         }
     }
@@ -103,13 +111,10 @@ impl Theme {
             Self::Light => ColorScheme::LIGHT,
             #[cfg(feature = "system-theme")]
             Self::System => {
-                if dark_light::detect()
-                    .ok()
-                    .is_some_and(|mode| mode == dark_light::Mode::Light)
-                {
-                    ColorScheme::LIGHT
-                } else {
+                if *SYSTEM_IS_DARK {
                     ColorScheme::DARK
+                } else {
+                    ColorScheme::LIGHT
                 }
             }
             Self::Custom(custom) => custom.colorscheme,
