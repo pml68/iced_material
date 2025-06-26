@@ -30,18 +30,17 @@ svg = ["iced_widget/svg"]
 qr_code = ["iced_widget/qr_code"]
 
 [dependencies]
-iced_widget = { git = "https://github.com/iced-rs/iced", branch = "master" }
+iced_widget = { git = "https://github.com/pml68/iced", branch = "feat/rehighlight-on-redraw" }
 dark-light = { version = "2.0", optional = true }
 serde = { version = "1.0", optional = true }
 
 [dependencies.iced_dialog]
 git = "https://github.com/pml68/iced_dialog"
-branch = "master"
+branch = "iced/personal"
 optional = true
 
 [dependencies.iced_anim]
-git = "https://github.com/bradysimon/iced_anim"
-branch = "iced/master"
+git = "https://github.com/pml68/iced_anim"
 features = ["derive"]
 optional = true
 
