@@ -48,7 +48,8 @@ pub fn parse_argb(s: &str) -> Option<Color> {
     let hex = s.strip_prefix('#').unwrap_or(s);
 
     let parse_channel = |from: usize, to: usize| {
-        let num = usize::from_str_radix(&hex[from..=to], 16).ok()? as f32 / 255.0;
+        let num =
+            usize::from_str_radix(&hex[from..=to], 16).ok()? as f32 / 255.0;
 
         // If we only got half a byte (one letter), expand it into a full byte (two letters)
         Some(if from == to { num + num * 16.0 } else { num })
@@ -114,13 +115,16 @@ pub fn mix(color1: Color, color2: Color, p2: f32) -> Color {
 
     let p1 = 1.0 - p2;
 
-    if (color1.a - 1.0).abs() > COLOR_ERROR_MARGIN || (color2.a - 1.0).abs() > COLOR_ERROR_MARGIN {
+    if (color1.a - 1.0).abs() > COLOR_ERROR_MARGIN
+        || (color2.a - 1.0).abs() > COLOR_ERROR_MARGIN
+    {
         let a = color1.a * p1 + color2.a * p2;
         if a > 0.0 {
             let c1 = color1.into_linear().map(|c| c * color1.a * p1);
             let c2 = color2.into_linear().map(|c| c * color2.a * p2);
 
-            let [r, g, b] = [c1[0] + c2[0], c1[1] + c2[1], c1[2] + c2[2]].map(|u| u / a);
+            let [r, g, b] =
+                [c1[0] + c2[0], c1[1] + c2[1], c1[2] + c2[2]].map(|u| u / a);
 
             return Color::from_linear_rgba(r, g, b, a);
         }
@@ -129,12 +133,17 @@ pub fn mix(color1: Color, color2: Color, p2: f32) -> Color {
     let c1 = color1.into_linear().map(|c| c * p1);
     let c2 = color2.into_linear().map(|c| c * p2);
 
-    Color::from_linear_rgba(c1[0] + c2[0], c1[1] + c2[1], c1[2] + c2[2], c1[3] + c2[3])
+    Color::from_linear_rgba(
+        c1[0] + c2[0],
+        c1[1] + c2[1],
+        c1[2] + c2[2],
+        c1[3] + c2[3],
+    )
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{mix, Color};
+    use super::{Color, mix};
 
     #[test]
     fn mixing() {

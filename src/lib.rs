@@ -2,7 +2,7 @@ use std::borrow::Cow;
 use std::sync::LazyLock;
 
 use iced_widget::core::theme::{Base, Style};
-use iced_widget::core::{color, Color};
+use iced_widget::core::{Color, color};
 use utils::{lightness, mix};
 
 pub mod button;
@@ -46,8 +46,9 @@ macro_rules! from_argb {
 }
 
 #[cfg(feature = "system-theme")]
-pub static SYSTEM_IS_DARK: LazyLock<bool> =
-    LazyLock::new(|| dark_light::detect().is_ok_and(|mode| mode == dark_light::Mode::Dark));
+pub static SYSTEM_IS_DARK: LazyLock<bool> = LazyLock::new(|| {
+    dark_light::detect().is_ok_and(|mode| mode == dark_light::Mode::Dark)
+});
 
 #[allow(clippy::large_enum_variant)]
 #[derive(Debug, Clone, PartialEq)]
@@ -69,7 +70,10 @@ impl Theme {
         Self::System,
     ];
 
-    pub fn new(name: impl Into<Cow<'static, str>>, colorscheme: ColorScheme) -> Self {
+    pub fn new(
+        name: impl Into<Cow<'static, str>>,
+        colorscheme: ColorScheme,
+    ) -> Self {
         Self::Custom(Custom {
             name: name.into(),
             is_dark: lightness(colorscheme.surface.color) <= 0.5,
@@ -77,7 +81,10 @@ impl Theme {
         })
     }
 
-    pub const fn new_const(name: &'static str, colorscheme: ColorScheme) -> Self {
+    pub const fn new_const(
+        name: &'static str,
+        colorscheme: ColorScheme,
+    ) -> Self {
         Self::Custom(Custom {
             name: Cow::Borrowed(name),
             is_dark: lightness(colorscheme.surface.color) <= 0.5,
