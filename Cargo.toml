@@ -36,12 +36,12 @@ serde = { version = "1.0", optional = true }
 
 [dependencies.iced_dialog]
 git = "https://github.com/pml68/iced_dialog"
-branch = "master"
+branch = "iced/personal"
 optional = true
 
 [dependencies.iced_anim]
-git = "https://github.com/bradysimon/iced_anim"
-branch = "iced/master"
+git = "https://github.com/pml68/iced_anim"
+branch = "main"
 features = ["derive"]
 optional = true
 
@@ -78,6 +78,6 @@ useless_conversion = "deny"
 broken_intra_doc_links = "forbid"
 
 [patch.crates-io]
-iced_widget = { git = "https://github.com/iced-rs/iced", branch = "master" }
-iced_core = { git = "https://github.com/iced-rs/iced", branch = "master" }
-iced = { git = "https://github.com/iced-rs/iced", branch = "master" }
+iced_widget = { git = "https://github.com/pml68/iced", branch = "feat/rehighlight-on-redraw" }
+iced_core = { git = "https://github.com/pml68/iced", branch = "feat/rehighlight-on-redraw" }
+iced = { git = "https://github.com/pml68/iced", branch = "feat/rehighlight-on-redraw" }
