@@ -30,7 +30,7 @@ svg = ["iced_widget/svg"]
 qr_code = ["iced_widget/qr_code"]
 
 [dependencies]
-iced_widget = { git = "https://github.com/iced-rs/iced", branch = "master" }
+iced_widget = "0.14.0-dev"
 dark-light = { version = "2.0", optional = true }
 serde = { version = "1.0", optional = true }
 
@@ -67,3 +67,7 @@ useless_conversion = "deny"
 
 [lints.rustdoc]
 broken_intra_doc_links = "forbid"
+
+[patch.crates-io]
+iced_widget = { git = "https://github.com/iced-rs/iced", branch = "master" }
+iced_core = { git = "https://github.com/iced-rs/iced", branch = "master" }
