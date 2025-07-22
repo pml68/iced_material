@@ -19,7 +19,7 @@ impl Catalog for Theme {
     }
 }
 
-fn button(
+pub fn styled(
     background: Color,
     foreground: Color,
     disabled: Color,
@@ -75,7 +75,7 @@ pub fn elevated(theme: &Theme, status: Status) -> Style {
 
     let shadow_color = theme.colors().shadow;
 
-    button(background, foreground, disabled, shadow_color, 1, status)
+    styled(background, foreground, disabled, shadow_color, 1, status)
 }
 
 pub fn filled(theme: &Theme, status: Status) -> Style {
@@ -87,7 +87,7 @@ pub fn filled(theme: &Theme, status: Status) -> Style {
 
     let shadow_color = theme.colors().shadow;
 
-    button(background, foreground, disabled, shadow_color, 0, status)
+    styled(background, foreground, disabled, shadow_color, 0, status)
 }
 
 pub fn filled_tonal(theme: &Theme, status: Status) -> Style {
@@ -98,7 +98,7 @@ pub fn filled_tonal(theme: &Theme, status: Status) -> Style {
     let disabled = theme.colors().surface.on_surface;
     let shadow_color = theme.colors().shadow;
 
-    button(background, foreground, disabled, shadow_color, 0, status)
+    styled(background, foreground, disabled, shadow_color, 0, status)
 }
 
 pub fn outlined(theme: &Theme, status: Status) -> Style {
@@ -121,7 +121,7 @@ pub fn outlined(theme: &Theme, status: Status) -> Style {
         },
     };
 
-    let style = button(
+    let style = styled(
         background,
         foreground,
         disabled,
@@ -138,7 +138,7 @@ pub fn text(theme: &Theme, status: Status) -> Style {
     let background = Color::TRANSPARENT;
     let disabled = theme.colors().surface.on_surface;
 
-    let style = button(
+    let style = styled(
         background,
         foreground,
         disabled,
