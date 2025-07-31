@@ -12,7 +12,7 @@ rust-version = "1.85"
 
 [features]
 default = ["system-theme"]
-# Adds a `System` variant that follows the system theme mode.
+# Adds a `System` theme variant that follows the system theme mode.
 system-theme = ["dep:dark-light"]
 # Provides `serde` support.
 serde = ["dep:serde"]
