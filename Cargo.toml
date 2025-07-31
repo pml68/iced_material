@@ -45,6 +45,9 @@ branch = "iced/master"
 features = ["derive"]
 optional = true
 
+[dev-dependencies]
+iced = "0.14.0-dev"
+
 [lints.rust]
 missing_debug_implementations = "deny"
 unsafe_code = "deny"
@@ -71,3 +74,4 @@ broken_intra_doc_links = "forbid"
 [patch.crates-io]
 iced_widget = { git = "https://github.com/iced-rs/iced", branch = "master" }
 iced_core = { git = "https://github.com/iced-rs/iced", branch = "master" }
+iced = { git = "https://github.com/iced-rs/iced", branch = "master" }
