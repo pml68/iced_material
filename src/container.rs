@@ -193,6 +193,7 @@ pub fn outlined(theme: &Theme) -> Style {
     Style {
         border: Border {
             color: theme.colors().outline.color,
+            width: 2.0,
             ..base.border
         },
         ..base
