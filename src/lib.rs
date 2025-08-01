@@ -1,8 +1,21 @@
 use std::borrow::Cow;
-use std::sync::LazyLock;
+#[cfg(feature = "system-theme")]
+use std::sync::{Arc, LazyLock};
 
-use iced_widget::core::theme::{Base, Style};
-use iced_widget::core::{Color, color};
+#[cfg(feature = "system-theme")]
+use arc_swap::ArcSwap;
+use iced_widget::core::{
+    Color, color,
+    theme::{Base, Style},
+};
+#[cfg(feature = "system-theme")]
+use iced_widget::runtime::futures::{
+    BoxStream,
+    futures::StreamExt,
+    subscription::{EventStream, Hasher, Recipe, Subscription, from_recipe},
+};
+#[cfg(feature = "system-theme")]
+use mundy::{Interest, Preferences};
 use utils::{lightness, mix};
 
 pub mod button;
@@ -47,8 +60,16 @@ macro_rules! from_argb {
 }
 
 #[cfg(feature = "system-theme")]
-pub static SYSTEM_IS_DARK: LazyLock<bool> = LazyLock::new(|| {
-    dark_light::detect().is_ok_and(|mode| mode == dark_light::Mode::Dark)
+static SYSTEM_THEME: LazyLock<ArcSwap<Theme>> = LazyLock::new(|| {
+    use std::time::Duration;
+
+    ArcSwap::new(Arc::new(
+        Preferences::once_blocking(
+            Interest::ColorScheme,
+            Duration::from_millis(1200),
+        )
+        .map_or(Theme::Dark, Theme::from),
+    ))
 });
 
 #[allow(clippy::large_enum_variant)]
@@ -65,10 +86,10 @@ pub enum Theme {
 
 impl Theme {
     pub const ALL: &'static [Self] = &[
-        Self::Dark,
-        Self::Light,
         #[cfg(feature = "system-theme")]
         Self::System,
+        Self::Dark,
+        Self::Light,
     ];
 
     pub fn new(
@@ -108,7 +129,7 @@ impl Theme {
             Self::Dark => true,
             Self::Light => false,
             #[cfg(feature = "system-theme")]
-            Self::System => *SYSTEM_IS_DARK,
+            Self::System => SYSTEM_THEME.load().is_dark(),
             Self::Custom(custom) => custom.is_dark,
         }
     }
@@ -118,28 +139,96 @@ impl Theme {
             Self::Dark => ColorScheme::DARK,
             Self::Light => ColorScheme::LIGHT,
             #[cfg(feature = "system-theme")]
-            Self::System => {
-                if *SYSTEM_IS_DARK {
-                    ColorScheme::DARK
-                } else {
-                    ColorScheme::LIGHT
-                }
-            }
+            Self::System => SYSTEM_THEME.load().colors(),
             Self::Custom(custom) => custom.colorscheme,
         }
+    }
+
+    /// A subscription that responds to the user's theme preference changing and returns the
+    /// corresponding [`Theme`] variant.
+    #[cfg(feature = "system-theme")]
+    pub fn subscription() -> Subscription<Self> {
+        struct ThemeSubscription;
+
+        impl Recipe for ThemeSubscription {
+            type Output = Theme;
+
+            fn hash(&self, state: &mut Hasher) {
+                use std::hash::Hash;
+                std::any::TypeId::of::<Self::Output>().hash(state);
+            }
+
+            fn stream(
+                self: Box<Self>,
+                _input: EventStream,
+            ) -> BoxStream<Self::Output> {
+                Preferences::stream(Interest::ColorScheme)
+                    .map(Theme::from)
+                    .boxed()
+            }
+        }
+
+        from_recipe(ThemeSubscription)
+    }
+
+    /// Updates the [`System`] variant with the given theme.
+    ///
+    /// Meant to be used in conjunction with [`Theme::subscription`].
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use iced_material::Theme;
+    ///
+    /// fn main() -> iced::Result {
+    ///     iced::application(State::default, State::update, State::view)
+    ///         .theme(State::theme)
+    ///         .subscription(State::subscription)
+    ///         .run()
+    /// }
+    ///
+    /// #[derive(Debug, Default)]
+    /// struct State;
+    ///
+    /// #[derive(Debug, Clone)]
+    /// enum Message {
+    ///     SystemThemeChanged(Theme)
+    /// }
+    ///
+    /// impl State {
+    ///     fn view(&self) -> iced::Element<Message> {
+    ///         // ...
+    ///     }
+    ///
+    ///     fn update(&mut self, message: Message) {
+    ///         match Message {
+    ///             Message::SystemThemeChanged(theme) => Theme::update_system_theme(theme)
+    ///         }
+    ///     }
+    ///
+    ///     fn theme(&self) -> Theme {
+    ///         Theme::System
+    ///     }
+    ///
+    ///     fn subscription(&self) -> iced::Subscription<Message> {
+    ///         Theme::subscription().map(Message::SystemThemeChanged)
+    ///     }
+    /// }
+    /// ```
+    ///
+    /// [`System`]: Theme::System
+    #[cfg(feature = "system-theme")]
+    pub fn update_system_theme(this: Self) {
+        SYSTEM_THEME.store(Arc::new(this));
     }
 }
 
 impl Default for Theme {
     fn default() -> Self {
-        #[cfg(feature = "system-theme")]
-        {
-            Self::System
-        }
-
-        #[cfg(not(feature = "system-theme"))]
-        {
-            Self::Dark
+        if cfg!(feature = "system-theme") {
+            Theme::System
+        } else {
+            Theme::Dark
         }
     }
 }
@@ -169,6 +258,17 @@ impl Base for Theme {
             warning: mix(from_argb!(0xffffff00), colors.primary.color, 0.25),
             danger: colors.error.color,
         })
+    }
+}
+
+#[cfg(feature = "system-theme")]
+impl From<Preferences> for Theme {
+    fn from(preference: Preferences) -> Self {
+        if preference.color_scheme == mundy::ColorScheme::Light {
+            Theme::Light
+        } else {
+            Theme::Dark
+        }
     }
 }
 
@@ -203,11 +303,15 @@ impl iced_anim::Animate for Theme {
     }
 }
 
+/// A custom [`Theme`].
 #[derive(Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Custom {
+    /// The [`Theme`]'s name.
     pub name: Cow<'static, str>,
+    /// Whether the [`Theme`] is dark.
     pub is_dark: bool,
+    /// The [`Theme`]'s [`ColorScheme`].
     #[cfg_attr(feature = "serde", serde(flatten))]
     pub colorscheme: ColorScheme,
 }
@@ -220,10 +324,13 @@ impl From<Custom> for Theme {
 
 impl From<Theme> for Custom {
     fn from(theme: Theme) -> Self {
-        Self {
-            name: theme.name(),
-            is_dark: theme.is_dark(),
-            colorscheme: theme.colors(),
+        match theme {
+            Theme::Custom(custom) => custom,
+            theme => Self {
+                name: theme.name(),
+                is_dark: theme.is_dark(),
+                colorscheme: theme.colors(),
+            },
         }
     }
 }
@@ -244,19 +351,34 @@ impl Clone for Custom {
     }
 }
 
+/// A [`Theme`]'s color scheme.
+///
+/// These color roles are base on Material Design 3. For more information about them, visit the
+/// official [M3 documentation](https://m3.material.io/styles/color/roles).
+///
+/// [M3 page]: https://m3.material.io/styles/color/roles
 #[derive(Debug, Clone, Copy, PartialEq)]
 #[cfg_attr(feature = "animate", derive(iced_anim::Animate))]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct ColorScheme {
+    /// The primary colors.
     pub primary: Primary,
+    /// The secondary colors.
     pub secondary: Secondary,
+    /// The tertiary colors.
     pub tertiary: Tertiary,
+    /// The error colors.
     pub error: Error,
+    /// The surface colors.
     pub surface: Surface,
+    /// The inverse colors.
     pub inverse: Inverse,
+    /// The outline colors.
     pub outline: Outline,
+    /// The shadow color.
     #[cfg_attr(feature = "serde", serde(with = "color_serde"))]
     pub shadow: Color,
+    /// The scrim color.
     #[cfg_attr(feature = "serde", serde(with = "color_serde"))]
     pub scrim: Color,
 }

@@ -35,6 +35,7 @@ enum Message {
     TogglerToggled(bool),
     PreviousTheme,
     NextTheme,
+    SystemThemeChanged(Theme),
 }
 
 impl Styling {
@@ -64,6 +65,9 @@ impl Styling {
                         Theme::ALL[current - 1].clone()
                     };
                 }
+            }
+            Message::SystemThemeChanged(theme) => {
+                Theme::update_system_theme(theme)
             }
         }
     }
@@ -165,16 +169,23 @@ impl Styling {
     }
 
     fn subscription(&self) -> Subscription<Message> {
-        keyboard::on_key_press(|key, _modifiers| match key {
-            keyboard::Key::Named(
-                keyboard::key::Named::ArrowUp | keyboard::key::Named::ArrowLeft,
-            ) => Some(Message::PreviousTheme),
-            keyboard::Key::Named(
-                keyboard::key::Named::ArrowDown
-                | keyboard::key::Named::ArrowRight,
-            ) => Some(Message::NextTheme),
-            _ => None,
-        })
+        let theme_toggle =
+            keyboard::on_key_press(|key, _modifiers| match key {
+                keyboard::Key::Named(
+                    keyboard::key::Named::ArrowUp
+                    | keyboard::key::Named::ArrowLeft,
+                ) => Some(Message::PreviousTheme),
+                keyboard::Key::Named(
+                    keyboard::key::Named::ArrowDown
+                    | keyboard::key::Named::ArrowRight,
+                ) => Some(Message::NextTheme),
+                _ => None,
+            });
+
+        let system_theme =
+            Theme::subscription().map(Message::SystemThemeChanged);
+
+        Subscription::batch([theme_toggle, system_theme])
     }
 
     fn theme(&self) -> Theme {
