@@ -196,12 +196,12 @@ impl Theme {
     /// }
     ///
     /// impl State {
-    ///     fn view(&self) -> iced::Element<Message> {
-    ///         // ...
+    ///     fn view(&self) -> iced::Element<Message, Theme> {
+    ///         iced::widget::text("Hello!").into()
     ///     }
     ///
     ///     fn update(&mut self, message: Message) {
-    ///         match Message {
+    ///         match message {
     ///             Message::SystemThemeChanged(theme) => Theme::update_system_theme(theme)
     ///         }
     ///     }
